@@ -16,6 +16,7 @@ class Game:
         self.h = height
         self.score = 0
         self.speed = 8
+
         # main game display
         self.display = pygame.display.set_mode((self.w, self.h))
         pygame.display.set_caption('Snake')
@@ -62,9 +63,11 @@ class Game:
         self.display.fill(colors['black'])
         for p in self.snake:
             pygame.draw.rect(self.display, colors['white'], 
-                             pygame.Rect(p.x, p.y, block_size, block_size))
+                             pygame.Rect(p.x, p.y, block_size, 
+                                         block_size))
         pygame.draw.rect(self.display, colors['green'], 
-                         pygame.Rect(self.food.x, self.food.y, block_size, block_size))
+                         pygame.Rect(self.food.x, self.food.y, 
+                                     block_size, block_size))
         
         text = font.render(f"Score:{self.score}", True, colors['white'])
         self.display.blit(text, (0, 0))
@@ -85,14 +88,17 @@ class Game:
                     self.direction = "up"
                 elif even.key == pygame.K_DOWN:
                     self.direction = "down"
+
         # move
-        self.move(self.direction) #update head
+        self.move(self.direction)
         self.snake.insert(0, self.head)
-        # check if game over
+
+        # check for game over
         game_over = False
         if self.collision():
             game_over = True
             return game_over, self.score
+            
         # place new food
         if self.head == self.food:
             self.score += 1
@@ -100,16 +106,15 @@ class Game:
             self.place_food()
         else:
             self.snake.pop()
+
         # update ui/clock
         self.update_ui()
         self.clock.tick(self.speed)
-        # return game over/score
-        
+
         return game_over, self.score
 
 if __name__ == '__main__':
     game = Game()
-
     while True:
         game_over, score = game.play_step()
         if game_over:
