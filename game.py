@@ -12,7 +12,7 @@ point = namedtuple('point', 'x, y')
 speed = 40
 block_size = 20
 pygame.init()
-font = pygame.font.SysFont('arial', fontsize=20)
+font = pygame.font.SysFont('arial', 20)
 class Game:
 
     def __init__(self, width=1280, height=720):
@@ -54,9 +54,12 @@ class Game:
     def update_ui(self):
         self.display.fill(colors['black'])
         for p in self.snake:
-            pygame.draw(self.display, colors['white'], pygame.Rect(p.x, p.y, block_size, block_size))
-        pygame.draw(self.display, colors['green'], pygame.Rect(self.food.x, self.food.y, block_size, block_size))
+            pygame.draw.rect(self.display, colors['white'], pygame.Rect(p.x, p.y, block_size, block_size))
+        pygame.draw.rect(self.display, colors['green'], pygame.Rect(self.food.x, self.food.y, block_size, block_size))
         
+        text = font.render(f"Score:{self.score}", True, colors['white'])
+        self.display.blit(text, [0, 0])
+        pygame.display.flip()
 
 if __name__ == '__main__':
     game = Game()
