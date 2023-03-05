@@ -15,7 +15,7 @@ class SnakeGame:
     def __init__(self, width=1280, height=720):
         self.w = width
         self.h = height
-        self.speed = 8
+        self.speed = 5
 
         # main game display
         self.display = pygame.display.set_mode((self.w, self.h))
@@ -130,7 +130,6 @@ class SnakeGame:
         # place new food
         if self.head == self.food:
             self.score += 1
-            self.speed += 1
             reward = 10
             self.place_food()
         else:

@@ -3,7 +3,7 @@ import random
 import numpy as np
 from collections import deque
 from game import SnakeGame, point, block_size
-from model import Linear_QNetwork, Trainer
+from model import Linear_QNet, Trainer
 
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
@@ -15,7 +15,7 @@ class Agent:
         self.epsilon = 0 # randomness
         self.gamma = 0.8 # discount rate
         self.memory = deque(maxlen=MAX_MEMORY)
-        self.model = Linear_QNetwork(11, 512, 3)
+        self.model = Linear_QNet(11, 256, 3)
         self.trainer = Trainer(self.model, lr=LR, gamma=self.gamma)
 
     def get_state(self, game):
@@ -49,7 +49,10 @@ class Agent:
             (dir_l and game.collision(point_d)),
 
             # 2. Move direction
-            dir_l, dir_r, dir_u, dir_d,
+            dir_l, 
+            dir_r, 
+            dir_u, 
+            dir_d,
 
             # 3. Food location
             game.food.x < game.head.x,
@@ -64,12 +67,13 @@ class Agent:
         self.memory.append((state, action, reward, next_state, game_over))
 
     def train_ltm(self):
+        print('long train')
         if len(self.memory) > BATCH_SIZE:
             batch = random.sample(self.memory, BATCH_SIZE)
         else:
             batch = self.memory
-
-        self.trainer.train(zip(*batch))
+        state, action, reward, next_state, game_over = zip(*batch)
+        self.trainer.train(state, action, reward, next_state, game_over)
 
     def train_stm(self, state, action, reward, next_state, game_over):
         self.trainer.train(state, action, reward, next_state, game_over)
@@ -90,9 +94,6 @@ class Agent:
 def train():
     game = SnakeGame()
     agent = Agent()
-    plot_scores = []
-    mean_scores = []
-    total_score = 0
     best_score = 0
     while True:
         prev_state = agent.get_state(game)
