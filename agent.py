@@ -3,6 +3,7 @@ import random
 import numpy as np
 from collections import deque
 from game import SnakeGame, point, block_size
+from model import Linear_QNetwork, Trainer
 
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
@@ -12,10 +13,10 @@ class Agent:
     def __init__(self):
         self.n_games = 0
         self.epsilon = 0 # randomness
-        self.gamma = 0 # discount rate
+        self.gamma = 0.8 # discount rate
         self.memory = deque(maxlen=MAX_MEMORY)
-        self.model = None
-        self.trainer = None
+        self.model = Linear_QNetwork(11, 512, 3)
+        self.trainer = Trainer(self.model, lr=LR, gamma=self.gamma)
 
     def get_state(self, game):
         head = game.snake[0]
@@ -68,10 +69,10 @@ class Agent:
         else:
             batch = self.memory
 
-        self.trainer.train_step(zip(*batch))
+        self.trainer.train(zip(*batch))
 
     def train_stm(self, state, action, reward, next_state, game_over):
-        self.trainer.train_step(state, action, reward, next_state, game_over)
+        self.trainer.train(state, action, reward, next_state, game_over)
 
     def get_action(self, state):
         # random move generator
@@ -81,7 +82,7 @@ class Agent:
             move = random.randint(0, 2)
         else:
             state_tensor = torch.tensor(state, dtype=torch.float)
-            prediction = self.model.predict(state_tensor)
+            prediction = self.model(state_tensor)
             move = torch.argmax(prediction).item()
         next_move[move] = 1
         return next_move
@@ -107,7 +108,7 @@ def train():
 
             if score > best_score:
                 best_score = score
-                # agent.model.save()
+                agent.model.save()
             
             print(f"Try {agent.n_games} Score {score} Best {best_score}")
 
