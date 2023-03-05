@@ -10,7 +10,7 @@ colors = {'black' : (0, 0, 0), 'white' : (255,255,255),
 point = namedtuple('point', 'x, y')
 block_size = 20
 
-class Game:
+class SnakeGame:
 
     def __init__(self, width=1280, height=720):
         self.w = width
@@ -143,7 +143,7 @@ class Game:
         return reward, game_over, self.score
 
 if __name__ == '__main__':
-    game = Game()
+    game = SnakeGame()
     while True:
         _, game_over, score = game.play_step()
         if game_over:
