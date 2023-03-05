@@ -1,7 +1,8 @@
-from collections import namedtuple
 import random
 import pygame
 pygame.init()
+import numpy as np
+from collections import namedtuple
 
 font = pygame.font.SysFont('arial', 20)
 colors = {'black' : (0, 0, 0), 'white' : (255,255,255),
@@ -14,19 +15,23 @@ class Game:
     def __init__(self, width=1280, height=720):
         self.w = width
         self.h = height
-        self.score = 0
         self.speed = 8
 
         # main game display
         self.display = pygame.display.set_mode((self.w, self.h))
         pygame.display.set_caption('Snake')
         self.clock = pygame.time.Clock()
+        self.reset()
+    
+    def reset(self):
         self.direction = "right"
         self.head = point(self.w/2, self.h/2)
         self.snake = [self.head, point(self.head.x - block_size, self.head.y),
                       point(self.head.x - (2*block_size), self.head.y)]
+        self.score = 0
         self.food = None
         self.place_food()
+        self.frame_count = 0
 
     def place_food(self):
         #get position as multiple of block_size
@@ -36,26 +41,45 @@ class Game:
         while self.food in self.snake:
             self.place_food()
     
-    def move(self, direction):
+    def move(self, action):
         x = self.head.x
         y = self.head.y
-        if direction == "right":
+
+        # if action, bot will set the new direction
+        # else it will take the player's direction
+        if action:
+            # [straigth, right, left] 100, 010, 001
+            clock_wise = ["right", "down", "left", "up"]
+            idx = clock_wise.index(self.direction)
+            if np.array_equal(action, [1, 0, 0]):
+                new_dir = clock_wise[idx] # continue on straight direction
+            if np.array_equal(action, [0, 1, 0]):
+                new_idx = (idx + 1) % 4 # clockwise next direction
+                new_dir = clock_wise[new_idx]
+            else:
+                new_idx = (idx - 1) % 4 # clockwise prev direction
+                new_dir = clock_wise[new_idx]
+            self.direction = new_dir
+
+        if self.direction == "right":
             x += block_size
-        elif direction == "left":
+        elif self.direction == "left":
             x -= block_size
-        elif direction == "up":
+        elif self.direction == "up":
             y -= block_size
-        elif direction == "down":
+        elif self.direction == "down":
             y += block_size
+
         self.head = point(x, y)
 
-    def collision(self):
+    def collision(self, p=None):
         # boundary collision
-        if (self.head.x > self.w - block_size or self.head.x < 0 or 
-            self.head.y > self.h - block_size or self.head.y < 0):
+        p = self.head if not p else p
+        if (p.x > self.w - block_size or p.x < 0 or 
+            p.y > self.h - block_size or p.y < 0):
             return True
         # snake collision
-        if self.head in self.snake[1:]:
+        if p in self.snake[1:]:
             return True
         return False
 
@@ -73,8 +97,9 @@ class Game:
         self.display.blit(text, (0, 0))
         pygame.display.flip()
     
-    def play_step(self):
+    def play_step(self, action=None):
         # collect user input 
+        self.frame_count += 1
         for even in pygame.event.get():
             if even.type == pygame.QUIT:
                 pygame.quit()
@@ -90,19 +115,23 @@ class Game:
                     self.direction = "down"
 
         # move
-        self.move(self.direction)
+        self.move(action)
         self.snake.insert(0, self.head)
 
         # check for game over
+        reward = 0
         game_over = False
-        if self.collision():
+        # collision detection and bot inactivity detection
+        if self.collision() or self.frame_count > 100 * len(self.snake):
             game_over = True
-            return game_over, self.score
+            reward = -10
+            return reward, game_over, self.score
             
         # place new food
         if self.head == self.food:
             self.score += 1
             self.speed += 1
+            reward = 10
             self.place_food()
         else:
             self.snake.pop()
@@ -111,12 +140,12 @@ class Game:
         self.update_ui()
         self.clock.tick(self.speed)
 
-        return game_over, self.score
+        return reward, game_over, self.score
 
 if __name__ == '__main__':
     game = Game()
     while True:
-        game_over, score = game.play_step()
+        _, game_over, score = game.play_step()
         if game_over:
             break
     print(f"Score:{score}")
