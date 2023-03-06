@@ -15,7 +15,7 @@ class SnakeGame:
     def __init__(self, width=1280, height=720):
         self.w = width
         self.h = height
-        self.speed = 5
+        self.speed = 20
 
         # main game display
         self.display = pygame.display.set_mode((self.w, self.h))
@@ -44,22 +44,22 @@ class SnakeGame:
     def move(self, action):
         x = self.head.x
         y = self.head.y
-
         # if action, bot will set the new direction
         # else it will take the player's direction
+        new_dir = self.direction
         if action:
             # [straigth, right, left] 100, 010, 001
             clock_wise = ["right", "down", "left", "up"]
             idx = clock_wise.index(self.direction)
-            if np.array_equal(action, [1, 0, 0]):
-                new_dir = clock_wise[idx] # continue on straight direction
+
             if np.array_equal(action, [0, 1, 0]):
                 new_idx = (idx + 1) % 4 # clockwise next direction
                 new_dir = clock_wise[new_idx]
-            else:
+            elif np.array_equal(action, [0, 0, 1]):
                 new_idx = (idx - 1) % 4 # clockwise prev direction
                 new_dir = clock_wise[new_idx]
-            self.direction = new_dir
+            
+        self.direction = new_dir
 
         if self.direction == "right":
             x += block_size
@@ -85,10 +85,10 @@ class SnakeGame:
 
     def update_ui(self):
         self.display.fill(colors['black'])
-        for p in self.snake:
+        for block in self.snake:
             pygame.draw.rect(self.display, colors['white'], 
-                             pygame.Rect(p.x, p.y, block_size, 
-                                         block_size))
+                             pygame.Rect(block.x, block.y, 
+                                         block_size, block_size))
         pygame.draw.rect(self.display, colors['green'], 
                          pygame.Rect(self.food.x, self.food.y, 
                                      block_size, block_size))
@@ -143,8 +143,9 @@ class SnakeGame:
 
 if __name__ == '__main__':
     game = SnakeGame()
+    game.speed = 10
     while True:
-        _, game_over, score = game.play_step()
+        reward, game_over, score = game.play_step()
         if game_over:
             break
     print(f"Score:{score}")
